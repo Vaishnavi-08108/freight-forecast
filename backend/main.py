@@ -1,5 +1,9 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from database import engine
+from models import Base
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Freight Forecast API")
 
