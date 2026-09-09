@@ -26,6 +26,30 @@ VESSELS = pd.DataFrame([
     {"Vessel Class": "Capesize", "Typical DWT": 150000, "Draft": 17.0, "LOA": 290, "Beam": 45},
 ])
 
+SUPPORTED_CARGO_TYPES = (
+    "Coal",
+    "Iron Ore",
+    "Limestone",
+    "Fertilizer",
+    "Steel",
+    "Bauxite",
+    "Petroleum Coke",
+    "Cement",
+    "Grain",
+)
+
+CARGO_KEYWORDS = {
+    "coal": ["coal"],
+    "iron ore": ["iron ore", "ore"],
+    "limestone": ["limestone"],
+    "fertilizer": ["fertilizer"],
+    "grain": ["grain", "food grain"],
+    "steel": ["steel"],
+    "cement": ["cement"],
+    "petroleum coke": ["petroleum coke", "petcoke"],
+    "bauxite": ["bauxite"],
+}
+
 # These thresholds are based on the historical uncertainty distribution
 # used in the notebook. They are calculated when the engine starts.
 _valid_rows = FEATURE_DATA.dropna(subset=FEATURES).copy()
@@ -106,19 +130,7 @@ def check_cargo_compatibility(port_name, cargo_type):
     commodities = str(port.iloc[0]["Commodities Handled"]).lower()
     cargo = str(cargo_type).lower().strip()
 
-    cargo_keywords = {
-        "coal": ["coal"],
-        "iron ore": ["iron ore", "ore"],
-        "limestone": ["limestone"],
-        "fertilizer": ["fertilizer"],
-        "grain": ["grain", "food grain"],
-        "steel": ["steel"],
-        "cement": ["cement"],
-        "petroleum coke": ["petroleum coke", "petcoke"],
-        "bauxite": ["bauxite"],
-    }
-
-    keywords = cargo_keywords.get(cargo, [cargo])
+    keywords = CARGO_KEYWORDS.get(cargo, [cargo])
     compatible = any(k in commodities for k in keywords)
 
     return {

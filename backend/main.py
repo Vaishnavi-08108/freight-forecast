@@ -4,7 +4,7 @@ warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-from ml_service import get_prediction
+from ml_service import get_options, get_prediction
 
 app = FastAPI(title="Freight Forecast API")
 
@@ -27,6 +27,10 @@ class PredictRequest(BaseModel):
 @app.get("/")
 def health_check():
     return {"status": "ok"}
+
+@app.get("/options")
+def options():
+    return get_options()
 
 @app.post("/predict")
 def predict(req: PredictRequest):
