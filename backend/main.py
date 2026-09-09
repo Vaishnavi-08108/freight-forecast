@@ -1,43 +1,38 @@
+import warnings
+warnings.filterwarnings("ignore", message="X has feature names")
+warnings.filterwarnings("ignore", category=UserWarning, module="sklearn")
+
 from fastapi import FastAPI
 from pydantic import BaseModel
-from database import engine
-from models import Base
-
-Base.metadata.create_all(bind=engine)
+from ml_service import get_prediction
 
 app = FastAPI(title="Freight Forecast API")
 
-class PredictRequest(BaseModel):
-    origin: str
-    destination: str
-    cargo_type: str
-    quantity_tonnes: float
-    vessel_type: str
+from fastapi.middleware.cors import CORSMiddleware
 
-class PredictResponse(BaseModel):
-    current_freight: float
-    predicted_freight_30d: float
-    percent_change: float
-    recommendation: str
-    reason: str
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # prototype-only; tighten before final demo if time permits
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class PredictRequest(BaseModel):
+    cargo_type: str
+    cargo_tonnes: float
+    destination: str
+    contract_duration_months: float
 
 @app.get("/")
 def health_check():
     return {"status": "ok"}
 
-@app.post("/predict", response_model=PredictResponse)
+@app.post("/predict")
 def predict(req: PredictRequest):
-    # Dummy logic for now — CSE3's real model plugs in here later
-    current = 25.0
-    predicted = 31.0
-    change = round(((predicted - current) / current) * 100, 2)
-    recommendation = "CHARTER NOW" if predicted > current else "WAIT"
-    reason = "Dummy prediction — real model not connected yet."
-
-    return PredictResponse(
-        current_freight=current,
-        predicted_freight_30d=predicted,
-        percent_change=change,
-        recommendation=recommendation,
-        reason=reason
+    return get_prediction(
+        cargo_type=req.cargo_type,
+        cargo_tonnes=req.cargo_tonnes,
+        destination=req.destination,
+        contract_duration_months=req.contract_duration_months,
     )
