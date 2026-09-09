@@ -7,12 +7,16 @@ import {
 
 import Badge from "../components/Badge";
 import SectionTitle from "../components/SectionTitle";
-
-import {
-  alerts
-} from "../data/mockData";
+import { getAlerts } from "../services/api";
+import { useEffect, useState } from "react";
 
 export default function Alerts() {
+
+  const [alerts, setAlerts] = useState([]);
+
+  useEffect(() => {
+    getAlerts().then(setAlerts).catch(() => setAlerts([]));
+  }, []);
 
   return (
 

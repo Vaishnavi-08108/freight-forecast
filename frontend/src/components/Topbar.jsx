@@ -30,7 +30,7 @@ export default function Topbar() {
     "/cargo":
       "Cargo Procurement",
 
-    "/route":
+    "/route-optimization":
       "Route Optimization",
 
     "/ports":

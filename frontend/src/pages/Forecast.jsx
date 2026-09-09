@@ -2,6 +2,7 @@ import {
   useMemo,
   useState
 } from "react";
+import { useEffect } from "react";
 
 import {
   AlertTriangle,
@@ -20,10 +21,9 @@ import { FreightChart } from "../components/FreightChart";
 
 import {
   buildForecastSeries,
-  cargoOptions,
   defaultPredictPayload,
   getForecast,
-  portOptions
+  getOptions
 } from "../services/api";
 
 const initial = {
@@ -43,6 +43,18 @@ export default function Forecast() {
 
   const [error, setError] =
     useState("");
+
+  const [options, setOptions] =
+    useState({
+      ports: [],
+      cargo_types: []
+    });
+
+  useEffect(() => {
+    getOptions()
+      .then(setOptions)
+      .catch(err => setError(err.message));
+  }, []);
 
   const series =
     useMemo(
@@ -186,7 +198,7 @@ export default function Forecast() {
               onChange={update}
             >
 
-              {cargoOptions.map(
+              {options.cargo_types.map(
                 cargo => (
                   <option
                     key={cargo}
@@ -214,7 +226,7 @@ export default function Forecast() {
               onChange={update}
             >
 
-              {portOptions.map(
+              {options.ports.map(
                 port => (
                   <option
                     key={port}

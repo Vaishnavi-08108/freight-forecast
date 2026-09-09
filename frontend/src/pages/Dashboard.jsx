@@ -26,41 +26,31 @@ import {
   CartesianGrid,
   Tooltip
 } from "recharts";
-
-const freightData = [
-  { month: "Jan", bdi: 1680 },
-  { month: "Feb", bdi: 1760 },
-  { month: "Mar", bdi: 1820 },
-  { month: "Apr", bdi: 1740 },
-  { month: "May", bdi: 1910 },
-  { month: "Jun", bdi: 2050 },
-  { month: "Jul", bdi: 1980 },
-  { month: "Aug", bdi: 2161 },
-  { month: "Sep", bdi: 2556 }
-];
-
-const vessels = [
-  {
-    name: "Supramax",
-    size: "55,000 DWT",
-    utilization: "90.9%",
-    score: 90.9
-  },
-  {
-    name: "Panamax",
-    size: "75,000 DWT",
-    utilization: "66.7%",
-    score: 66.7
-  },
-  {
-    name: "Capesize",
-    size: "150,000 DWT",
-    utilization: "33.3%",
-    score: 33.3
-  }
-];
+import { useEffect, useState } from "react";
+import { buildForecastSeries, getDashboardData } from "../services/api";
 
 export default function Dashboard() {
+  const [dashboardData, setDashboardData] = useState(null);
+
+  useEffect(() => {
+    getDashboardData().then(setDashboardData).catch(() => setDashboardData(null));
+  }, []);
+
+  const result = dashboardData?.result;
+  const forecast = result?.forecast;
+  const freightData = forecast
+    ? buildForecastSeries(forecast).map((point) => ({
+        month: point.day,
+        bdi: point.bdi
+      }))
+    : [];
+  const vessels = (result?.vessel?.ranking || []).map((vessel) => ({
+    name: vessel.vessel_class,
+    size: `${Number(vessel.typical_dwt).toLocaleString()} DWT`,
+    utilization: `${vessel.capacity_utilization_pct}%`,
+    score: vessel.suitability_score
+  }));
+
   return (
     <div className="dashboard-page">
 
@@ -236,13 +226,13 @@ export default function Dashboard() {
 
             <div className="floating-card forecast-float">
               <span>AI FORECAST</span>
-              <strong>+18.3%</strong>
+              <strong>{forecast ? `+${forecast.predicted_change_pct}%` : "—"}</strong>
               <small>Next 30 days</small>
             </div>
 
             <div className="floating-card market-float">
               <span>BDI INDEX</span>
-              <strong>2,161</strong>
+              <strong>{forecast ? Number(forecast.current_bdi).toLocaleString() : "—"}</strong>
               <small>Live market</small>
             </div>
 
@@ -263,12 +253,12 @@ export default function Dashboard() {
 
               <span className="positive">
                 <TrendingUp size={15} />
-                18.3%
+                {forecast ? `${forecast.predicted_change_pct}%` : "—"}
               </span>
             </div>
 
             <p>Current BDI</p>
-            <h3>2,161</h3>
+            <h3>{forecast ? Number(forecast.current_bdi).toLocaleString() : "—"}</h3>
             <span className="stat-description">
               Baltic Dry Index
             </span>
@@ -289,7 +279,7 @@ export default function Dashboard() {
             </div>
 
             <p>Predicted BDI</p>
-            <h3>2,556</h3>
+            <h3>{forecast ? Number(forecast.predicted_bdi).toLocaleString() : "—"}</h3>
             <span className="stat-description">
               Expected market rise
             </span>
@@ -310,9 +300,9 @@ export default function Dashboard() {
             </div>
 
             <p>Market Risk</p>
-            <h3>High Risk</h3>
+            <h3>{forecast?.risk_level || "—"}</h3>
             <span className="stat-description">
-              Model uncertainty: 478
+              Model uncertainty: {forecast?.model_uncertainty || "—"}
             </span>
 
           </div>
@@ -326,14 +316,16 @@ export default function Dashboard() {
               </div>
 
               <span className="positive">
-                90.9%
+                {result?.vessel?.capacity_utilization
+                  ? `${result.vessel.capacity_utilization}%`
+                  : "—"}
               </span>
             </div>
 
             <p>Best Vessel</p>
-            <h3>Supramax</h3>
+            <h3>{result?.vessel?.recommended || "—"}</h3>
             <span className="stat-description">
-              55,000 DWT capacity
+              {vessels[0]?.size || "Backend ranking pending"}
             </span>
 
           </div>
@@ -363,9 +355,9 @@ export default function Dashboard() {
 
             <div className="chart-info">
               <div>
-                <strong>2,556</strong>
+                <strong>{forecast ? Number(forecast.predicted_bdi).toLocaleString() : "—"}</strong>
                 <span className="chart-up">
-                  +18.3%
+                  {forecast ? `+${forecast.predicted_change_pct}%` : "—"}
                 </span>
               </div>
 
@@ -455,8 +447,8 @@ export default function Dashboard() {
               </div>
 
               <div>
-                <strong>Strong Rise</strong>
-                <span>18.3% expected increase</span>
+                <strong>{forecast?.market_condition || "Awaiting backend"}</strong>
+                <span>{forecast ? `${forecast.predicted_change_pct}% expected increase` : "No forecast loaded"}</span>
               </div>
 
             </div>
@@ -467,7 +459,7 @@ export default function Dashboard() {
             </div>
 
             <div className="confidence-bar">
-              <div style={{ width: "76%" }}></div>
+              <div style={{ width: forecast ? "76%" : "0%" }}></div>
             </div>
 
             <div className="recommendation">
@@ -477,10 +469,9 @@ export default function Dashboard() {
               </div>
 
               <div>
-                <strong>Charter Soon</strong>
+                <strong>{forecast?.charter_action || "Awaiting recommendation"}</strong>
                 <p>
-                  High market uncertainty detected.
-                  Secure vessel capacity before rates rise.
+                  {forecast?.charter_action || "Run a forecast to receive the backend recommendation."}
                 </p>
               </div>
 
@@ -579,8 +570,8 @@ export default function Dashboard() {
               </div>
 
               <div>
-                <strong>Coal</strong>
-                <span>50,000 tonnes</span>
+                <strong>{result?.cargo?.type || "—"}</strong>
+                <span>{result?.cargo?.quantity_tonnes?.toLocaleString() || "—"} tonnes</span>
               </div>
 
             </div>
@@ -606,7 +597,7 @@ export default function Dashboard() {
 
                 <div>
                   <small>DESTINATION</small>
-                  <strong>Paradip Port</strong>
+                  <strong>{result?.port?.destination || "—"}</strong>
                 </div>
 
               </div>
@@ -617,12 +608,12 @@ export default function Dashboard() {
 
               <div>
                 <small>CONTRACT</small>
-                <strong>3 Months</strong>
+                <strong>{result?.contract?.duration_months || "—"} Months</strong>
               </div>
 
               <div>
                 <small>VESSEL</small>
-                <strong>Supramax</strong>
+                <strong>{result?.vessel?.recommended || "—"}</strong>
               </div>
 
             </div>
@@ -637,7 +628,7 @@ export default function Dashboard() {
 
               <div>
                 <p className="panel-label">PORT INTELLIGENCE</p>
-                <h3>Paradip Port</h3>
+                <h3>{result?.port?.destination || "Port data pending"}</h3>
               </div>
 
               <MapPin size={21} />
@@ -648,7 +639,7 @@ export default function Dashboard() {
 
               <div className="risk-heading">
                 <span>Operational Risk</span>
-                <strong>LOW</strong>
+                <strong>{result?.port?.operational_risk || "—"}</strong>
               </div>
 
               <div className="risk-bar">
@@ -668,7 +659,7 @@ export default function Dashboard() {
 
               <div>
                 <span>Monsoon restriction</span>
-                <strong>No restriction</strong>
+                <strong>{result?.port?.warning || "No backend response"}</strong>
               </div>
 
               <div>
@@ -682,7 +673,7 @@ export default function Dashboard() {
 
             <div className="port-alert">
               <Activity size={17} />
-              Normal port operations detected
+              {result?.port?.warning || "Waiting for backend port status"}
             </div>
 
           </div>

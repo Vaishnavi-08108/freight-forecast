@@ -6,12 +6,16 @@ import {
 
 import Badge from "../components/Badge";
 import SectionTitle from "../components/SectionTitle";
-
-import {
-  ports
-} from "../data/mockData";
+import { getPorts } from "../services/api";
+import { useEffect, useState } from "react";
 
 export default function Ports() {
+
+  const [ports, setPorts] = useState([]);
+
+  useEffect(() => {
+    getPorts().then(setPorts).catch(() => setPorts([]));
+  }, []);
 
   return (
 

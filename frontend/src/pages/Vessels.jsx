@@ -11,12 +11,16 @@ import {
 
 import Badge from "../components/Badge";
 import SectionTitle from "../components/SectionTitle";
-
-import {
-  vessels
-} from "../data/mockData";
+import { getVessels } from "../services/api";
+import { useEffect } from "react";
 
 export default function Vessels() {
+
+  const [vessels, setVessels] = useState([]);
+
+  useEffect(() => {
+    getVessels().then(setVessels).catch(() => setVessels([]));
+  }, []);
 
   const [
     type,

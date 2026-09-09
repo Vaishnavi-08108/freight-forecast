@@ -13,10 +13,17 @@ import {
 } from "../components/FreightChart";
 
 import {
-  historyData
-} from "../data/mockData";
+  getCargoHistory
+} from "../services/api";
+import { useEffect, useState } from "react";
 
 export default function Cargo() {
+
+  const [historyData, setHistoryData] = useState([]);
+
+  useEffect(() => {
+    getCargoHistory().then(setHistoryData).catch(() => setHistoryData([]));
+  }, []);
 
   return (
 
